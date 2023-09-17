@@ -1,10 +1,27 @@
-from flask import Flask, request, jsonify,render_template
+from flask import Flask, request, jsonify
 import pandas as pd
+import random
 
 app = Flask(__name__)
 
-# Create a dataset with donor and recipient HLA types, blood types, and donor BMI
+
+
+# Sample Indian names
+indian_names = [
+    "Aarav Sharma", "Siddharth Verma", "Ishaan Reddy", "Advait Gupta", "Vihaan Kumar",
+    "Aadya Khanna", "Aaradhya Yadav", "Anvi Singh", "Aarush Kapoor", "Navya Choudhury",
+    "Aanya Patel", "Kabir Singh", "Aaliyah Chopra", "Reyansh Joshi", "Anaya Bansal",
+    "Aarush Mehta", "Aria Bhatia", "Rudra Khurana", "Aadhya Rana", "Ishan Malhotra"
+]
+
+# Create separate arrays for donor and recipient names (sample size: 10)
+donor_names = random.sample(indian_names, 10)
+recipient_names = random.sample([name for name in indian_names if name not in donor_names], 10)
+
+# Create a dataset with donor and recipient HLA types, blood types, donor BMI, and names (sample size: 10)
 data = {
+    'Donor_Name': donor_names,
+    'Recipient_Name': recipient_names,
     'Donor_HLA_A': ['A1', 'A2', 'A3', 'A1', 'A2', 'A4', 'A2', 'A3', 'A5', 'A6'],
     'Recipient_HLA_A': ['A1', 'A2', 'A1', 'A3', 'A2', 'A3', 'A4', 'A5', 'A6', 'A1'],
     'Donor_HLA_B': ['B7', 'B8', 'B9', 'B8', 'B7', 'B6', 'B8', 'B7', 'B9', 'B6'],
@@ -44,7 +61,22 @@ hla_threshold = 2
 healthy_bmi_lower = 18.5
 healthy_bmi_upper = 30
 
-@app.route('/calculate-compatibility',methods=['GET'])
+# Define a formula for calculating compatibility score
+def calculate_compatibility_score(row):
+    hla_matches = row['HLA_Matches']
+    bmi_compatibility = row['BMI_Compatibility']
+    blood_type_compatibility = row['Blood_Type_Compatibility']
+    
+    # Customize this formula as needed
+    # You can assign different weights to each component (HLA, BMI, blood type)
+    # For example: compatibility_score = hla_matches * 0.5 + bmi_compatibility * 0.3 + blood_type_compatibility * 0.2
+    
+    compatibility_score =((hla_matches * hla_weight) + (int(bmi_compatibility) * bmi_weight) + (int(blood_type_compatibility) * blood_type_weight))*100
+s  # For demonstration, using HLA matches as the compatibility score
+    
+    return compatibility_score
+
+@app.route('/',methods=['GET'])
 def calculate_compatibility():
     # Retrieve data from the POST request
     # request_data = request.json
@@ -65,14 +97,16 @@ def calculate_compatibility():
     
     df['BMI_Compatibility'] = df.apply(calculate_bmi_compatibility, axis=1)
     
+    # Calculate compatibility score
+    df['Compatibility_Score'] = df.apply(calculate_compatibility_score, axis=1)
+    
     # Determine overall compatibility (HLA, blood type, and donor BMI)
-    df['Overall_Compatibility'] = (df['HLA_Matches'] >= hla_threshold) & df['Blood_Type_Compatibility']
+    df['Overall_Compatibility'] = (df['HLA_Matches'] >= hla_threshold) & df['Blood_Type_Compatibility'] &  df['BMI_Compatibility']
     
     # Convert the results to JSON
-    matching_donors = df.to_dict(orient='index')
+    matching_donors = df.to_dict(orient='Recipient_Name')
     
     return jsonify(matching_donors)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
