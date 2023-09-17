@@ -71,7 +71,7 @@ def calculate_compatibility_score(row):
     # You can assign different weights to each component (HLA, BMI, blood type)
     # For example: compatibility_score = hla_matches * 0.5 + bmi_compatibility * 0.3 + blood_type_compatibility * 0.2
     
-    compatibility_score =((hla_matches * hla_weight) + (int(bmi_compatibility) * bmi_weight) + (int(blood_type_compatibility) * blood_type_weight))*100
+    compatibility_score =((hla_matches * 0.5) + (int(bmi_compatibility) * 0.3) + (int(blood_type_compatibility) *0.2))*100
     # For demonstration, using HLA matches as the compatibility score
     return compatibility_score
 
